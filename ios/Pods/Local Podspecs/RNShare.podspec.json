@@ -1,0 +1,23 @@
+{
+  "name": "RNShare",
+  "version": "1.0.23",
+  "summary": "Social Share, Sending Simple Data to Other Apps",
+  "homepage": "https://github.com/EstebanFuentealba/react-native-share",
+  "license": "MIT",
+  "authors": {
+    "Esteban Fuentealba": "efuentealba@json.cl"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source": {
+    "git": "https://github.com/EstebanFuentealba/react-native-share.git",
+    "tag": "1.0.23"
+  },
+  "source_files": "ios/**/*.{h,m}",
+  "dependencies": {
+    "React": [
+
+    ]
+  }
+}
