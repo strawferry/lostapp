@@ -46,10 +46,11 @@ iOS 没有发布,下载安卓体验
 
 ## 仓库地址
 
-[服务器地址 GitHub 地址,具体配置看文档](https://github.com/strawferry/lostserver)
+[Express 版本 GitHub 地址,具体配置看文档](https://github.com/strawferry/lostserver)
+
+[Koa 版本 GitHub 地址,具体配置看文档](https://github.com/strawferry/openlostkoa)
 
 [App 地址,具体配置看文档](https://github.com/strawferry/lostapp)
-
 
 # 个人博客
 ### **博客地址: [`https://cblog.ferryvip.com/`](https://cblog.ferryvip.com/)**
