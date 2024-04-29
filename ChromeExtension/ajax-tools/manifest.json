@@ -1,0 +1,64 @@
+{
+  "name": "66Ajax Interceptor Tools",
+  "version": "1.0.10",
+  "description": "Modify the response text of Ajax requests",
+  "manifest_version": 3,
+  "declarative_net_request": {
+    "rule_resources": []
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "./icons/tools16.png",
+      "24": "./icons/tools24.png",
+      "32": "./icons/tools32.png"
+    }
+  },
+  "icons": {
+    "48": "./icons/tools128.png",
+    "128": "./icons/tools128.png"
+  },
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "./content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "devtools_page": "devtoolsPage/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "html/iframePage/dist/index.html",
+        "html/iframePage/dist/declarativeNetRequest.html",
+        "pageScripts/index.js",
+        "html/iframePage/mock.js",
+        "icons/iconfont/iconfont.css",
+        "icons/iconfont/iconfont.woff2",
+        "icons/iconfont/iconfont.woff",
+        "icons/iconfont/iconfont.ttf"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
