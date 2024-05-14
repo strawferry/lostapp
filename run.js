@@ -1,3 +1,6 @@
+const host = 'http://59.110.168.213:3000';
+// const host = 'http://localhost:3000';
+
 
 function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -49,7 +52,7 @@ console.log("🚀 ~ ePath:", ePath);
 
 const puppeteer = require('puppeteer');
 
-const PAGE_SIZE = 20; // 每页数据量
+const PAGE_SIZE = 30; // 每页数据量
 const request = require('request');
 async function fetchData(url) {
     return new Promise((resolve, reject) => {
@@ -59,10 +62,26 @@ async function fetchData(url) {
         });
     });
 }
+async function postData(data) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            method: 'POST',
+            url: `${host}/postData`,
+            json: {
+                url: '/setGoodOffline',
+                data: data
+            }
+        };
+        // console.log("🚀 ~ postData ~ options:", options);
+        request.post(options, (error, res, body) => {
+            if (error) reject(error);
+            resolve(body);
+        });
+    });
+}
+
 async function getGoods(page, order = 'ASC') {
     // 计算偏移量
-    const host = 'http://59.110.168.213:3000';
-    // const host = 'http://localhost:3000';
     const url = `${host}/getGood?page=${page}&order=${order}`;
     const res = await fetchData(url)
     const dd = JSON.parse(res)
@@ -70,7 +89,16 @@ async function getGoods(page, order = 'ASC') {
     // const res = await runExec(curl)
     return dd.data
 }
-async function getGoodsPage(arr) {
+async function getGoodCount() {
+    // 计算偏移量
+    const url = `${host}/getGoodInfo`;
+    const res = await fetchData(url)
+    const dd = JSON.parse(res)
+    // console.log("🚀 ~ getGoods ~ dd:", dd)
+    // const res = await runExec(curl)
+    return dd.data.count
+}
+async function getGoodsPage(arr, p) {
     return new Promise(async (resolve, reject) => {
         for (let i = 0; i < arr?.length; i++) {
             const it = arr[i];
@@ -81,21 +109,29 @@ async function getGoodsPage(arr) {
                 // headless: false,
                 // devtools: true,
                 args: [
+                    '--no-sandbox',
                     `--disable-extensions-except=${ePath}`,
                     `--load-extension=${ePath}`,
                     '--allow-running-insecure-content'
                 ]
             });
             const page = await browser.newPage();
-            console.log("🚀 ~ getGoodsPage page.goto ~ url:", url)
+            console.log(`Page: ${p} index: ${i}`, "🚀 ~ getGoodsPage page.goto ~ url:", url)
             // await page.goto(url);
             await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await sleep(0.5)
             const content = await page.content();
             const regex = /很抱歉，由于您访问的URL有可能对网站造成安全威胁，您的访问被阻断/;
             const match = regex.exec(content);
             if (match) {
                 await toast('麦克林被限制了', '很抱歉，由于您访问的URL有可能对网站造成安全威胁，您的访问被阻断')
                 return reject('很抱歉，由于您访问的URL有可能对网站造成安全威胁，您的访问被阻断')
+            }
+            const regex2 = /该产品尚未上线，敬请期待/;
+            const match2 = regex2.exec(content);
+            if (match2) {
+                console.log('该产品尚未上线，敬请期待', code);
+                await postData({ item_code: code })
             }
             const isNext = await page.$('#nocaptcha');
             if (isNext) {
@@ -104,7 +140,7 @@ async function getGoodsPage(arr) {
                 return reject('需要验证码')
             }
             // await page.waitForTimeout(1000);
-            await sleep(2)
+            await sleep(0.5)
             await browser.close()
             const t = getRandomNumber(2, 5)
             await sleep(t)
@@ -113,63 +149,108 @@ async function getGoodsPage(arr) {
     })
 }
 async function getProducts() {
-    const total = 10000
-    const totalPage = Math.ceil(total / PAGE_SIZE)
-    console.log(totalPage, "🚀 ~ getProducts1 ~ total:", total)
-    for (let p = 5; p <= totalPage; p++) {
+    let p = 1;
+    const counts = await getGoodCount()
+    const totalPage = Math.ceil(counts / PAGE_SIZE)
+    if (totalPage === 0) {
+        console.log('麦克林刷完了');
+        await toast('麦克林刷完了', '麦克林刷完了 getProducts1 0000')
+        process.exit(1);
+    }
+    console.log(`还剩页数: ${totalPage}`, "🚀 ~ getProducts1 ASC ~ 剩余产品数量:", counts, "page:", p)
+    if (p <= totalPage) {
         const arr = await getGoods(p)
         if (arr.length > 0) {
-            await getGoodsPage(arr)
-        } else {
-            await toast('麦克林刷完了', '麦克林刷完了')
+            await getGoodsPage(arr, p)
         }
+        getProducts()
     }
 }
 
 async function getProducts2() {
-    const total = 10000
-    const totalPage = Math.ceil(total / PAGE_SIZE)
-    console.log(totalPage, "🚀 ~ getProducts2 ~ total:", total)
-    for (let p = 10; p <= totalPage; p++) {
+    let p = 1;
+    const counts = await getGoodCount()
+    const totalPage = Math.ceil(counts / PAGE_SIZE)
+    if (totalPage === 0) {
+        console.log('麦克林刷完了');
+        await toast('麦克林刷完了', '麦克林刷完了 getProducts2 0000 DESC')
+        process.exit(1);
+    }
+    console.log(`还剩页数: ${totalPage}`, "🚀 ~ getProducts2 DESC ~ 剩余产品数量:", counts, "page:", p)
+    if (p <= totalPage) {
         const arr = await getGoods(p, 'DESC')
         if (arr.length > 0) {
-            await getGoodsPage(arr)
-        } else {
-            await toast('麦克林刷完了', '麦克林刷完了')
+            await getGoodsPage(arr, p)
         }
+        getProducts2()
     }
 }
 
-async function getProducts3() {
-    const total = 10000
-    const totalPage = Math.ceil(total / PAGE_SIZE)
-    console.log(totalPage, "🚀 ~ getProducts3 ~ total:", total)
-    for (let p = 20; p <= totalPage; p++) {
+
+async function getProducts3(pp) {
+    let p = pp || 3;
+    const counts = await getGoodCount()
+    const totalPage = Math.ceil(counts / PAGE_SIZE)
+    if (totalPage === 0) {
+        console.log('麦克林刷完了');
+        await toast('麦克林刷完了', '麦克林刷完了 getProducts3 000')
+        process.exit(1);
+    }
+    console.log(`还剩页数: ${totalPage}`, "🚀 ~ getProducts1 ASC ~ 剩余产品数量:", counts, "page:", p)
+    if (p < totalPage) {
         const arr = await getGoods(p)
         if (arr.length > 0) {
-            await getGoodsPage(arr)
-        } else {
-            await toast('麦克林刷完了', '麦克林刷完了')
+            await getGoodsPage(arr, p)
         }
-    }
-}
-async function getProducts4() {
-    const total = 10000
-    const totalPage = Math.ceil(total / PAGE_SIZE)
-    console.log(totalPage, "🚀 ~ getProducts4 ~ total:", total)
-    for (let p = 30; p <= totalPage; p++) {
-        const arr = await getGoods(p, 'DESC')
+        getProducts3()
+    } else if (p === totalPage) {
+        const arr = await getGoods(p)
         if (arr.length > 0) {
-            await getGoodsPage(arr)
+            await getGoodsPage(arr, p)
+        }
+        if (p === 1) {
+            await toast('麦克林刷完了', '麦克林刷完了 getProducts3  === 1 ASC')
+            process.exit(1);
         } else {
-            await toast('麦克林刷完了', '麦克林刷完了')
+            p = p - 1
+            getProducts3(p)
         }
     }
 }
 
+async function getProducts4(pp) {
+    let p = pp || 3;
+    const counts = await getGoodCount()
+    const totalPage = Math.ceil(counts / PAGE_SIZE)
+    if (totalPage === 0) {
+        console.log('麦克林刷完了');
+        await toast('麦克林刷完了', '麦克林刷完了 getProducts4 0000 DESC')
+        process.exit(1);
+    }
+    console.log(`还剩页数: ${totalPage}`, "🚀 ~ getProducts4 DESC ~ 剩余产品数量:", counts, "page:", p)
+    if (p < totalPage) {
+        const arr = await getGoods(p, 'DESC')
+        if (arr.length > 0) {
+            await getGoodsPage(arr, p)
+        }
+        getProducts4()
+    } else if (p === totalPage) {
+        const arr = await getGoods(p, 'DESC')
+        if (arr.length > 0) {
+            await getGoodsPage(arr, p)
+        }
+        if (p === 1) {
+            await toast('麦克林刷完了', '麦克林刷完了 getProducts4  === 1 DESC')
+            process.exit(1);
+        } else {
+            p = p - 1
+            getProducts4(p)
+        }
+    }
+}
 // getProducts()
-getProducts2()
-// getProducts3()
+// getProducts2()
+getProducts3()
 // getProducts4()
 
 
